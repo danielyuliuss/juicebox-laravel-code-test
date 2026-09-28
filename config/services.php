@@ -28,6 +28,13 @@ return [
         'region' => env('AWS_DEFAULT_REGION', 'us-east-1'),
     ],
 
+    'open_meteo' => [
+        'url' => 'https://api.open-meteo.com/v1/forecast',
+        'latitude' => -31.9523,
+        'longitude' => 115.8613,
+        'timezone' => 'Australia/Perth',
+    ],
+
     'slack' => [
         'notifications' => [
             'bot_user_oauth_token' => env('SLACK_BOT_USER_OAUTH_TOKEN'),
