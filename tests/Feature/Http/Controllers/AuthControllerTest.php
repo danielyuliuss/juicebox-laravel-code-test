@@ -33,3 +33,19 @@ test('registers a user and queues a welcome email', function () {
 
     Queue::assertPushed(SendWelcomeEmail::class, fn (SendWelcomeEmail $job): bool => $job->user->email === 'taylor@example.test');
 });
+
+test('rate limits repeated login attempts', function () {
+    $this->withServerVariables(['REMOTE_ADDR' => '203.0.113.42']);
+
+    for ($attempt = 0; $attempt < 5; $attempt++) {
+        $this->postJson('/api/login', [
+            'email' => 'missing@example.test',
+            'password' => 'incorrect-password',
+        ])->assertUnauthorized();
+    }
+
+    $this->postJson('/api/login', [
+        'email' => 'missing@example.test',
+        'password' => 'incorrect-password',
+    ])->assertStatus(429);
+});

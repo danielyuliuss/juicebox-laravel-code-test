@@ -13,8 +13,8 @@ PHP and MySQL run in Laravel Sail containers; local PHP and MySQL installations 
 ## Setup
 
 ```bash
-git clone <repository-url>
-cd <repository-directory>
+git clone https://github.com/danielyuliuss/juicebox-laravel-code-test.git
+cd juicebox-laravel-code-test
 cp .env.example .env
 ```
 
@@ -49,7 +49,7 @@ MySQL runs in the Sail `mysql` container. Open-Meteo does not require an API key
 
 ## API authentication
 
-Register or log in to receive a Sanctum access token. Send it on protected requests using the `Authorization: Bearer <token>` header. Logout revokes the current token.
+Register or log in to receive a Sanctum access token. Send it on protected requests using the `Authorization: Bearer <token>` header. Logout revokes the current token. Register and login are each limited to 5 requests per minute per client.
 
 ## API endpoints
 
