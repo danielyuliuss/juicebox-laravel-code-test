@@ -60,8 +60,8 @@ All paths are prefixed with `/api`. Endpoints marked **Yes** require a Sanctum B
 | POST | `/api/register` | No | Create an account and issue a token. |
 | POST | `/api/login` | No | Verify credentials and issue a token. |
 | POST | `/api/logout` | Yes | Revoke the current access token. |
-| GET | `/api/users` | No | List users with pagination. |
-| GET | `/api/users/{user}` | No | Retrieve a user. |
+| GET | `/api/users` | Yes | List users with pagination. |
+| GET | `/api/users/{user}` | Yes | Retrieve a user. |
 | GET | `/api/posts` | No | List posts with their users and pagination. |
 | GET | `/api/posts/{post}` | No | Retrieve a post with its user. |
 | POST | `/api/posts` | Yes | Create a post for the authenticated user. |

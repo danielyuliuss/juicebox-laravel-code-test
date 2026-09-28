@@ -2,11 +2,17 @@
 
 use App\Models\User;
 use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
+use Laravel\Sanctum\Sanctum;
 
 uses(LazilyRefreshDatabase::class);
 
+test('requires authentication to access the Users API', function () {
+    $this->getJson('/api/users')->assertUnauthorized();
+});
+
 test('returns a user without sensitive fields', function () {
     $user = User::factory()->create();
+    Sanctum::actingAs($user);
 
     $this->getJson("/api/users/{$user->id}")
         ->assertOk()
@@ -18,7 +24,9 @@ test('returns a user without sensitive fields', function () {
 });
 
 test('returns a paginated user index', function () {
-    User::factory()->count(3)->create();
+    $user = User::factory()->create();
+    User::factory()->count(2)->create();
+    Sanctum::actingAs($user);
 
     $this->getJson('/api/users')
         ->assertOk()
