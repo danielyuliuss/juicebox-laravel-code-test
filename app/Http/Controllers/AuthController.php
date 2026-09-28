@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\LoginRequest;
 use App\Http\Requests\RegisterRequest;
+use App\Jobs\SendWelcomeEmail;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -20,6 +21,8 @@ class AuthController extends Controller
         ]);
 
         $token = $user->createToken('auth-token');
+
+        SendWelcomeEmail::dispatch($user);
 
         return response()->json([
             'user' => $user,
