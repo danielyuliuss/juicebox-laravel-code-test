@@ -1,58 +1,157 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Laravel REST API Code Test
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+A RESTful API built with Laravel 13. It includes Sanctum authentication, read-only user endpoints, CRUD endpoints for posts, and an Open-Meteo integration for current weather in Perth, Australia. Weather responses are cached, welcome email delivery uses queued jobs, weather refresh is scheduled hourly, and the API is covered by automated feature tests.
 
-## About Laravel
+## Requirements
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+- Docker / Docker Desktop
+- WSL2 when using Windows
+- Git
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+PHP and MySQL run in Laravel Sail containers; local PHP and MySQL installations are not required.
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
-
-## Learning Laravel
-
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
-
-In addition, [Laracasts](https://laracasts.com) contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
-
-You can also watch bite-sized lessons with real-world projects on [Laravel Learn](https://laravel.com/learn), where you will be guided through building a Laravel application from scratch while learning PHP fundamentals.
-
-## Agentic Development
-
-Laravel's predictable structure and conventions make it ideal for AI coding agents like Claude Code, Cursor, and GitHub Copilot. Install [Laravel Boost](https://laravel.com/docs/ai) to supercharge your AI workflow:
+## Setup
 
 ```bash
-composer require laravel/boost --dev
-
-php artisan boost:install
+git clone <repository-url>
+cd <repository-directory>
+cp .env.example .env
 ```
 
-Boost provides your agent 15+ tools and skills that help agents build Laravel applications while following best practices.
+If `vendor/` is missing, install Composer dependencies in a container:
 
-## Contributing
+```bash
+docker run --rm -v "$PWD:/app" -w /app composer:2 install
+```
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+Configure `.env` to use the MySQL service defined by Sail:
 
-## Code of Conduct
+```dotenv
+DB_CONNECTION=mysql
+DB_HOST=mysql
+DB_PORT=3306
+DB_DATABASE=laravel
+DB_USERNAME=sail
+DB_PASSWORD=password
+```
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+Start Sail, generate the application key, and apply migrations:
 
-## Security Vulnerabilities
+```bash
+./vendor/bin/sail up -d
+./vendor/bin/sail artisan key:generate
+./vendor/bin/sail artisan migrate
+```
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+## Environment
 
-## License
+MySQL runs in the Sail `mysql` container. Open-Meteo does not require an API key, and no weather API secret or additional weather environment variable is needed.
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+## API authentication
+
+Register or log in to receive a Sanctum access token. Send it on protected requests using the `Authorization: Bearer <token>` header. Logout revokes the current token.
+
+## API endpoints
+
+All paths are prefixed with `/api`. Endpoints marked **Yes** require a Sanctum Bearer token.
+
+| Method | Path | Auth required | Purpose |
+| --- | --- | --- | --- |
+| POST | `/api/register` | No | Create an account and issue a token. |
+| POST | `/api/login` | No | Verify credentials and issue a token. |
+| POST | `/api/logout` | Yes | Revoke the current access token. |
+| GET | `/api/users` | No | List users with pagination. |
+| GET | `/api/users/{user}` | No | Retrieve a user. |
+| GET | `/api/posts` | No | List posts with their users and pagination. |
+| GET | `/api/posts/{post}` | No | Retrieve a post with its user. |
+| POST | `/api/posts` | Yes | Create a post for the authenticated user. |
+| PATCH | `/api/posts/{post}` | Yes | Update a post owned by the authenticated user. |
+| DELETE | `/api/posts/{post}` | Yes | Delete a post owned by the authenticated user. |
+| GET | `/api/weather` | No | Retrieve current Perth weather. |
+
+### Request examples
+
+**Register** (`POST /api/register`):
+
+```json
+{
+  "name": "Jane Doe",
+  "email": "jane@example.com",
+  "password": "secret-password",
+  "password_confirmation": "secret-password"
+}
+```
+
+**Login** (`POST /api/login`):
+
+```json
+{
+  "email": "jane@example.com",
+  "password": "secret-password"
+}
+```
+
+**Create a post** (`POST /api/posts`, Bearer token required):
+
+```json
+{
+  "title": "A day in Perth",
+  "body": "A short post about the day."
+}
+```
+
+**Update a post** (`PATCH /api/posts/{post}`, Bearer token required):
+
+```json
+{
+  "title": "An updated title"
+}
+```
+
+## Pagination
+
+`GET /api/posts` and `GET /api/users` use Laravel pagination with 15 items per page by default.
+
+## Weather
+
+The weather endpoint uses Open-Meteo for the fixed location Perth, Australia. Successful current weather data is cached for 15 minutes. A queued refresh is scheduled hourly. If the provider cannot return weather data, the API responds with HTTP 502.
+
+## Queue
+
+The application uses Laravel's database queue driver. A welcome email is queued after registration. Run a worker to process queued jobs:
+
+```bash
+./vendor/bin/sail artisan queue:work
+```
+
+## Manual welcome email
+
+The command requires an existing user's email address and queues the same welcome email job used after registration:
+
+```bash
+./vendor/bin/sail artisan app:send-welcome-email user@example.com
+```
+
+## Scheduler
+
+Run Laravel's scheduler locally to dispatch the hourly weather refresh:
+
+```bash
+./vendor/bin/sail artisan schedule:work
+```
+
+`RefreshWeather` is scheduled to run every hour.
+
+## Testing
+
+Run the automated test suite with:
+
+```bash
+./vendor/bin/sail artisan test
+```
+
+The feature tests cover authentication, users, posts, authorization, weather integration, weather caching, and provider failure handling.
+
+## Architecture notes
+
+The API uses Eloquent relationships, Form Requests, Sanctum, Laravel's HTTP client and cache, database queues, and scheduled jobs.
